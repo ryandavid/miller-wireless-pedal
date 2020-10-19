@@ -32,8 +32,10 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 message("-- Build Type: ${CMAKE_BUILD_TYPE}")
 
+link_directories(${CMAKE_SOURCE_DIR}/linker/)
+
 add_link_options(
-    -T${CMAKE_SOURCE_DIR}/linker/blinky_gcc_nrf52.ld
+    -Tblinky_gcc_nrf52.ld
 
     -Wl,--gc-sections
 
@@ -55,7 +57,7 @@ add_compile_options(
 
     #-Werror
     -Wall
-    -Wextra
+    #-Wextra
     #-Wcast-align
     #-Wconversion
     #-Wsign-conversion
@@ -67,20 +69,6 @@ add_compile_options(
     -Wsuggest-final-methods
 
     -Wno-expansion-to-defined
-
-
-
-    # Debugging.
-    -DNDEBUG
-    -D_DEBUG
-    -DBOARD_SPARKFUN_NRF52840_MINI
-    -DUNICODE
-    -D_UNICODE
-    -DBSP_DEFINES_ONLY
-    -DCONFIG_GPIO_AS_PINRESET
-    -DFLOAT_ABI_HARD
-    -DNRF52840_XXAA
-    -DDCONFIG_NFCT_PINS_AS_GPIOS
 
     # Optimization
     -ffunction-sections
@@ -95,14 +83,31 @@ add_compile_options(
     -mfpu=fpv4-sp-d16
 )
 
+add_definitions(
+    -DBOARD_SPARKFUN_NRF52840_MINI
+    -DCONFIG_GPIO_AS_PINRESET
+    -DFLOAT_ABI_HARD
+    -DNRF52840_XXAA
+    -DNRF_SD_BLE_API_VERSION=6
+    -DS140
+    -DSOFTDEVICE_PRESENT
+    -DSWI_DISABLE0
+
+    -D__HEAP_SIZE=8192
+    -D__STACK_SIZE=8192
+)
+
 include(FetchContent)
 Set(FETCHCONTENT_QUIET FALSE)
 
 # Bring in the Nordic SDK.
 FetchContent_Declare(
   nRF5_SDK
-  URL       https://www.nordicsemi.com/-/media/Software-and-other-downloads/SDKs/nRF5/Binaries/nRF5SDK1702d674dde.zip
-  URL_HASH  MD5=a04e2f76e712689aa1dff13969696af3
+  # 17.0.2
+  # URL       https://www.nordicsemi.com/-/media/Software-and-other-downloads/SDKs/nRF5/Binaries/nRF5SDK1702d674dde.zip
+  # URL_HASH  MD5=a04e2f76e712689aa1dff13969696af3
+  URL        https://www.nordicsemi.com/-/media/Software-and-other-downloads/SDKs/nRF5/Binaries/nRF5SDK15209412b96.zip
+  URL_HASH   MD5=6677511a17f5247686fbec73093f4c0c
   PATCH_COMMAND
     cp ${CMAKE_SOURCE_DIR}/patch/boards.h components/boards/ &&
     cp ${CMAKE_SOURCE_DIR}/patch/sparkfun_nrf52840_mini.h components/boards/
@@ -115,24 +120,128 @@ include_directories(
     config
 
     ${nrf5_sdk_SOURCE_DIR}/components
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_advertising
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_dtm
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_racp
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_ancs_c
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_ans_c
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_bas
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_bas_c
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_cscs
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_cts_c
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_dfu
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_dis
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_gls
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_hids
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_hrs
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_hrs_c
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_hts
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_ias
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_ias_c
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_lbs
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_lbs_c
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_lls
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_nus
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_nus_c
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_rscs
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_rscs_c
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_tps
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/common
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/nrf_ble_gatt
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/nrf_ble_qwr
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/peer_manager
     ${nrf5_sdk_SOURCE_DIR}/components/boards
-    ${nrf5_sdk_SOURCE_DIR}/components/drivers_nrf/nrf_soc_nosd
+    ${nrf5_sdk_SOURCE_DIR}/components/drivers_nrf/usbd
     ${nrf5_sdk_SOURCE_DIR}/components/libraries/atomic
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/atomic_fifo
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/atomic_flags
     ${nrf5_sdk_SOURCE_DIR}/components/libraries/balloc
-    ${nrf5_sdk_SOURCE_DIR}/components/libraries/bsp
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/bootloader/ble_dfu
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/button
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/cli
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/crc16
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/crc32
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/crypto
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/csense
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/csense_drv
     ${nrf5_sdk_SOURCE_DIR}/components/libraries/delay
-    ${nrf5_sdk_SOURCE_DIR}/components/libraries/delay
-    ${nrf5_sdk_SOURCE_DIR}/components/libraries/experimental_log
-    ${nrf5_sdk_SOURCE_DIR}/components/libraries/experimental_log/src
-    ${nrf5_sdk_SOURCE_DIR}/components/libraries/experimental_memobj
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/ecc
     ${nrf5_sdk_SOURCE_DIR}/components/libraries/experimental_section_vars
-    ${nrf5_sdk_SOURCE_DIR}/components/libraries/fifo
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/experimental_task_manager
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/fds
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/fstorage
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/gfx
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/gpiote
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/hardfault
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/hci
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/led_softblink
     ${nrf5_sdk_SOURCE_DIR}/components/libraries/log
     ${nrf5_sdk_SOURCE_DIR}/components/libraries/log/src
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/low_power_pwm
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/mem_manager
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/memobj
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/mpu
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/mutex
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/pwm
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/pwr_mgmt
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/queue
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/ringbuf
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/scheduler
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/sdcard
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/slip
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/sortlist
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/spi_mngr
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/stack_guard
     ${nrf5_sdk_SOURCE_DIR}/components/libraries/strerror
-    ${nrf5_sdk_SOURCE_DIR}/components/libraries/uart
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/svc
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/timer
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/twi_mngr
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/twi_sensor
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/usbd
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/usbd/class/audio
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/usbd/class/cdc
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/usbd/class/cdc/acm
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/usbd/class/hid
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/usbd/class/hid/generic
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/usbd/class/hid/kbd
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/usbd/class/hid/mouse
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/usbd/class/msc
     ${nrf5_sdk_SOURCE_DIR}/components/libraries/util
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/conn_hand_parser
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/conn_hand_parser/ac_rec_parser
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/conn_hand_parser/ble_oob_advdata_parse
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/conn_hand_parser/le_oob_rec_parser
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/connection_handover/ac_rec
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/connection_handover/ble_oob_advdata
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/connection_handover/ble_pair_lib
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/connection_handover/ble_pair_msg
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/connection_handover/common
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/connection_handover/ep_oob_rec
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/connection_handover/hs_rec
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/connection_handover/le_oob_rec
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/generic/message
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/generic/record
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/launchapp
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/parser/message
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/parser/record
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/text
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/ndef/uri
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/t2t_lib
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/t2t_lib/hal_t2t
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/t2t_parser
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/t4t_lib
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/t4t_lib/hal_t4t
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/t4t_parser/apdu
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/t4t_parser/cc_file
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/t4t_parser/hl_detection_procedure
+    ${nrf5_sdk_SOURCE_DIR}/components/nfc/t4t_parser/tlv
+    ${nrf5_sdk_SOURCE_DIR}/components/softdevice/common
+    ${nrf5_sdk_SOURCE_DIR}/components/softdevice/s140/headers
+    ${nrf5_sdk_SOURCE_DIR}/components/softdevice/s140/headers/nrf52
     ${nrf5_sdk_SOURCE_DIR}/components/toolchain/cmsis/include
+    ${nrf5_sdk_SOURCE_DIR}/external/fprintf
+    ${nrf5_sdk_SOURCE_DIR}/external/segger_rtt
+    ${nrf5_sdk_SOURCE_DIR}/external/utf_converter
     ${nrf5_sdk_SOURCE_DIR}/integration/nrfx
     ${nrf5_sdk_SOURCE_DIR}/integration/nrfx/legacy
     ${nrf5_sdk_SOURCE_DIR}/modules/nrfx
@@ -143,23 +252,56 @@ include_directories(
 add_executable(${PROJECT_NAME}
     main.c
 
-    ${nrf5_sdk_SOURCE_DIR}/modules/nrfx/mdk/gcc_startup_nrf52840.S
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/ble_services/ble_lbs/ble_lbs.c
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/common/ble_advdata.c
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/common/ble_conn_params.c
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/common/ble_conn_state.c
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/common/ble_srv_common.c
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/nrf_ble_gatt/nrf_ble_gatt.c
+    ${nrf5_sdk_SOURCE_DIR}/components/ble/nrf_ble_qwr/nrf_ble_qwr.c
+    ${nrf5_sdk_SOURCE_DIR}/components/boards/boards.c
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/atomic/nrf_atomic.c
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/atomic_fifo/nrf_atfifo.c
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/atomic_flags/nrf_atflags.c
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/balloc/nrf_balloc.c
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/button/app_button.c
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/experimental_section_vars/nrf_section_iter.c
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/hardfault/hardfault_implementation.c
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/log/src/nrf_log_backend_rtt.c
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/log/src/nrf_log_backend_serial.c
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/log/src/nrf_log_backend_uart.c
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/log/src/nrf_log_default_backends.c
     ${nrf5_sdk_SOURCE_DIR}/components/libraries/log/src/nrf_log_frontend.c
     ${nrf5_sdk_SOURCE_DIR}/components/libraries/log/src/nrf_log_str_formatter.c
-    ${nrf5_sdk_SOURCE_DIR}/components/boards/boards.c
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/memobj/nrf_memobj.c
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/pwr_mgmt/nrf_pwr_mgmt.c
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/ringbuf/nrf_ringbuf.c
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/scheduler/app_scheduler.c
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/strerror/nrf_strerror.c
+    ${nrf5_sdk_SOURCE_DIR}/components/libraries/timer/app_timer.c
     ${nrf5_sdk_SOURCE_DIR}/components/libraries/util/app_error.c
     ${nrf5_sdk_SOURCE_DIR}/components/libraries/util/app_error_handler_gcc.c
     ${nrf5_sdk_SOURCE_DIR}/components/libraries/util/app_error_weak.c
     ${nrf5_sdk_SOURCE_DIR}/components/libraries/util/app_util_platform.c
     ${nrf5_sdk_SOURCE_DIR}/components/libraries/util/nrf_assert.c
-    ${nrf5_sdk_SOURCE_DIR}/components/libraries/atomic/nrf_atomic.c
-    ${nrf5_sdk_SOURCE_DIR}/components/libraries/balloc/nrf_balloc.c
+    ${nrf5_sdk_SOURCE_DIR}/components/softdevice/common/nrf_sdh.c
+    ${nrf5_sdk_SOURCE_DIR}/components/softdevice/common/nrf_sdh_ble.c
+    ${nrf5_sdk_SOURCE_DIR}/components/softdevice/common/nrf_sdh_soc.c
     ${nrf5_sdk_SOURCE_DIR}/external/fprintf/nrf_fprintf.c
     ${nrf5_sdk_SOURCE_DIR}/external/fprintf/nrf_fprintf_format.c
-    ${nrf5_sdk_SOURCE_DIR}/components/libraries/memobj/nrf_memobj.c
-    ${nrf5_sdk_SOURCE_DIR}/components/libraries/ringbuf/nrf_ringbuf.c
-    ${nrf5_sdk_SOURCE_DIR}/components/libraries/strerror/nrf_strerror.c
-    ${nrf5_sdk_SOURCE_DIR}/modules/nrfx/soc/nrfx_atomic.c
+    ${nrf5_sdk_SOURCE_DIR}/external/segger_rtt/SEGGER_RTT.c
+    ${nrf5_sdk_SOURCE_DIR}/external/segger_rtt/SEGGER_RTT_printf.c
+    ${nrf5_sdk_SOURCE_DIR}/external/segger_rtt/SEGGER_RTT_Syscalls_GCC.c
+    ${nrf5_sdk_SOURCE_DIR}/external/utf_converter/utf.c
+    ${nrf5_sdk_SOURCE_DIR}/integration/nrfx/legacy/nrf_drv_clock.c
+    ${nrf5_sdk_SOURCE_DIR}/integration/nrfx/legacy/nrf_drv_uart.c
+    ${nrf5_sdk_SOURCE_DIR}/modules/nrfx/drivers/src/nrfx_clock.c
+    ${nrf5_sdk_SOURCE_DIR}/modules/nrfx/drivers/src/nrfx_gpiote.c
+    ${nrf5_sdk_SOURCE_DIR}/modules/nrfx/drivers/src/nrfx_power_clock.c
+    ${nrf5_sdk_SOURCE_DIR}/modules/nrfx/drivers/src/nrfx_uart.c
+    ${nrf5_sdk_SOURCE_DIR}/modules/nrfx/drivers/src/nrfx_uarte.c
+    ${nrf5_sdk_SOURCE_DIR}/modules/nrfx/drivers/src/prs/nrfx_prs.c
+    ${nrf5_sdk_SOURCE_DIR}/modules/nrfx/mdk/gcc_startup_nrf52840.S
     ${nrf5_sdk_SOURCE_DIR}/modules/nrfx/mdk/system_nrf52840.c
 )
 
@@ -181,11 +323,12 @@ add_custom_target(size
 add_custom_command(
     TARGET ${PROJECT_NAME}
     POST_BUILD
-    COMMAND arm-none-eabi-objcopy -O ihex -R .eeprom -R .fuse -R .lock -R .signature $<TARGET_FILE:${PROJECT_NAME}> $<TARGET_FILE_DIR:${PROJECT_NAME}>/$<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>.hex
+    COMMAND arm-none-eabi-objcopy -O ihex $<TARGET_FILE:${PROJECT_NAME}> $<TARGET_FILE_DIR:${PROJECT_NAME}>/$<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>.hex
 )
 
 add_custom_target(dfu_package
-    adafruit-nrfutil dfu genpkg --sd-req 0xFFFE --dev-type 0x0052 --application $<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>.hex dfu-package.zip
+    rm -f dfu-package.zip &&
+    adafruit-nrfutil dfu genpkg --sd-req 0x00B6 --dev-type 0x0052 --application $<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>.hex dfu-package.zip
     DEPENDS ${PROJECT_NAME}
 )
 
