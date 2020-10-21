@@ -18,7 +18,7 @@ set(CMAKE_C_FLAGS_RELEASE "-O3" CACHE STRING "")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3" CACHE STRING "")
 
 # project name
-project(miller_wireless_pedal)
+project(miller_wireless_pedal C ASM)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -35,63 +35,49 @@ message("-- Build Type: ${CMAKE_BUILD_TYPE}")
 link_directories(${CMAKE_SOURCE_DIR}/linker/)
 
 add_link_options(
-    -Tblinky_gcc_nrf52.ld
-
-    -Wl,--gc-sections
-
-    -specs=nano.specs
+    -Tble_app_blinky_gcc_nrf52.ld
 
     -mcpu=cortex-m4
     -mthumb
-    -mabi=aapcs
     -mfloat-abi=hard
     -mfpu=fpv4-sp-d16
+    -u _printf_float
+    #-Wl,--cref
+    -Wl,--check-sections
+    -Wl,--gc-sections
+    -Wl,--unresolved-symbols=report-all
+    -Wl,--warn-common
+    -Wl,--warn-section-align
+
+    --specs=nano.specs
+    --specs=nosys.specs
 )
 
 add_compile_options(
-    $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>
-    $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
-
-    $<$<COMPILE_LANGUAGE:CXX>:-Wold-style-cast>
-    $<$<COMPILE_LANGUAGE:CXX>:-Wsuggest-override>
-
-    #-Werror
-    -Wall
-    #-Wextra
-    #-Wcast-align
-    #-Wconversion
-    #-Wsign-conversion
-
-    -Wshadow
-    -Wlogical-op
-
-    -Wsuggest-final-types
-    -Wsuggest-final-methods
-
-    -Wno-expansion-to-defined
-
-    # Optimization
-    -ffunction-sections
-    -fdata-sections
-    -mlong-calls
-    -fno-math-errno
-
     -mcpu=cortex-m4
     -mthumb
-    -mabi=aapcs
     -mfloat-abi=hard
     -mfpu=fpv4-sp-d16
+
+    -ffunction-sections
+    -fdata-sections
+
+    -fno-exceptions
+    $<$<COMPILE_LANGUAGE:CXX>:-fno-threadsafe-statics>
+    $<$<COMPILE_LANGUAGE:CXX>:-fno-rtti>
+
+    -nostdlib
 )
 
 add_definitions(
     -DBOARD_SPARKFUN_NRF52840_MINI
     -DCONFIG_GPIO_AS_PINRESET
     -DFLOAT_ABI_HARD
-    -DNRF52840_XXAA
     -DNRF_SD_BLE_API_VERSION=6
     -DS140
-    -DSOFTDEVICE_PRESENT
     -DSWI_DISABLE0
+    -DSOFTDEVICE_PRESENT
+    -DNRF52840_XXAA
 
     -D__HEAP_SIZE=8192
     -D__STACK_SIZE=8192
@@ -103,9 +89,6 @@ Set(FETCHCONTENT_QUIET FALSE)
 # Bring in the Nordic SDK.
 FetchContent_Declare(
   nRF5_SDK
-  # 17.0.2
-  # URL       https://www.nordicsemi.com/-/media/Software-and-other-downloads/SDKs/nRF5/Binaries/nRF5SDK1702d674dde.zip
-  # URL_HASH  MD5=a04e2f76e712689aa1dff13969696af3
   URL        https://www.nordicsemi.com/-/media/Software-and-other-downloads/SDKs/nRF5/Binaries/nRF5SDK15209412b96.zip
   URL_HASH   MD5=6677511a17f5247686fbec73093f4c0c
   PATCH_COMMAND
@@ -249,6 +232,7 @@ include_directories(
     ${nrf5_sdk_SOURCE_DIR}/modules/nrfx/hal
     ${nrf5_sdk_SOURCE_DIR}/modules/nrfx/mdk
 )
+
 add_executable(${PROJECT_NAME}
     main.c
 
@@ -328,11 +312,11 @@ add_custom_command(
 
 add_custom_target(dfu_package
     rm -f dfu-package.zip &&
-    adafruit-nrfutil dfu genpkg --sd-req 0x00B6 --dev-type 0x0052 --application $<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>.hex dfu-package.zip
+    adafruit-nrfutil dfu genpkg --dev-type 0x0052 --sd-req 0x00B6 --application $<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>.hex dfu-package.zip
     DEPENDS ${PROJECT_NAME}
 )
 
 add_custom_target(bootload
-    adafruit-nrfutil --verbose dfu serial --package dfu-package.zip -p ${SERIAL_PORT} -b 115200 --singlebank --touch 1200
+    adafruit-nrfutil --verbose dfu serial --package dfu-package.zip -p ${SERIAL_PORT} -b 115200 --singlebank
     DEPENDS dfu_package
 )
