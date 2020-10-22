@@ -89,6 +89,10 @@ Set(FETCHCONTENT_QUIET FALSE)
 # Bring in the Nordic SDK.
 FetchContent_Declare(
   nRF5_SDK
+  # 17.0.2
+  # URL       https://www.nordicsemi.com/-/media/Software-and-other-downloads/SDKs/nRF5/Binaries/nRF5SDK1702d674dde.zip
+  # URL_HASH  MD5=a04e2f76e712689aa1dff13969696af3
+  # 15.2.0
   URL        https://www.nordicsemi.com/-/media/Software-and-other-downloads/SDKs/nRF5/Binaries/nRF5SDK15209412b96.zip
   URL_HASH   MD5=6677511a17f5247686fbec73093f4c0c
   PATCH_COMMAND
@@ -97,7 +101,16 @@ FetchContent_Declare(
 )
 
 FetchContent_MakeAvailable(nRF5_SDK)
-#message(${nrf5_sdk_SOURCE_DIR})
+
+# Ensure that we have the necessary tools to flash the board.
+find_program(NRFUTIL
+    NAMES adafruit-nrfutil
+    PATHS /usr/local/bin/
+)
+
+if ("${NRFUTIL}" STREQUAL "NRFUTIL-NOTFOUND")
+    message(FATAL_ERROR "Failed to find `adafruit-nrfutil`. Check out the README for installation instructions.")
+endif()
 
 include_directories(
     config
@@ -311,12 +324,11 @@ add_custom_command(
 )
 
 add_custom_target(dfu_package
-    rm -f dfu-package.zip &&
-    adafruit-nrfutil dfu genpkg --dev-type 0x0052 --sd-req 0x00B6 --application $<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>.hex dfu-package.zip
+    ${NRFUTIL} dfu genpkg --dev-type 0x0052 --sd-req 0x00B6 --application $<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>.hex dfu-package.zip
     DEPENDS ${PROJECT_NAME}
 )
 
 add_custom_target(bootload
-    adafruit-nrfutil --verbose dfu serial --package dfu-package.zip -p ${SERIAL_PORT} -b 115200 --singlebank
+    ${NRFUTIL} --verbose dfu serial --package dfu-package.zip -p ${SERIAL_PORT} -b 115200 --singlebank
     DEPENDS dfu_package
 )

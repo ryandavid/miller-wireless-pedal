@@ -21,9 +21,8 @@ this project.
 1. Install [Adafruit's nRF25_nrfutil](https://github.com/adafruit/Adafruit_nRF52_nrfutil) so we can use the DFU
 bootloader.
 ```
-pip3 install --user adafruit-nrfutil
+pip3 install adafruit-nrfutil
 ```
-FYI On my machine, the Python path `/Users/$USER/Library/Python/3.8/bin` was not part of my enviroment path.
 
 2. Install the gcc toolchain.
 ```
@@ -37,3 +36,19 @@ wget https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu-rm/10-2
 brew install cmake
 ```
 
+## Building
+### MacOS
+```
+# Find the name of the serial port created by the bootloader.  Put the board into bootloader and look for something like `tty.usbmodem141401` under `/dev`
+
+# Jump into the `sw` directory and create a build directory. And then jump into that.  Run CMake, specifying the name of the serial port found earlier.  The first time running CMake will take a bit of time as the Nordic SDK is being downloaded as a dependency.
+cmake -DSERIAL_PORT=/dev/tty.usbmodem141401 ..
+
+# Build it.
+make -j
+
+# Flash it.  Put your board into booloader first.
+make bootload
+
+# Success!
+```
