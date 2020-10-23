@@ -31,17 +31,17 @@ wget https://armkeil.blob.core.windows.net/developer/Files/downloads/gnu-rm/10-2
 # Install.  Add `/Applications/ARM/bin/` to PATH via bash_profile.
 ```
 
-3. Install cmake.
+3. Install cmake and Qt.
 ```
-brew install cmake
+brew install cmake qt
 ```
 
-## Building
+## Building Firmware
 ### MacOS
 ```
 # Find the name of the serial port created by the bootloader.  Put the board into bootloader and look for something like `tty.usbmodem141401` under `/dev`
 
-# Jump into the `sw` directory and create a build directory. And then jump into that.  Run CMake, specifying the name of the serial port found earlier.  The first time running CMake will take a bit of time as the Nordic SDK is being downloaded as a dependency.
+# Jump into the `fw` directory and create a `build` directory. And then jump into that.  Run CMake, specifying the name of the serial port found earlier.  The first time running CMake will take a bit of time as the Nordic SDK is being downloaded as a dependency.
 cmake -DSERIAL_PORT=/dev/tty.usbmodem141401 ..
 
 # Build it.
@@ -51,4 +51,14 @@ make -j
 make bootload
 
 # Success!
+```
+
+## Building Software
+### MacOS
+```
+# Jump into the `sw` directory and create a `build` directory. And then jump into that.
+cmake ..
+
+# Build it.
+make -j
 ```
